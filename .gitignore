@@ -1,0 +1,9 @@
+# Keep learning content off the public GitHub Pages repository
+*.pdf
+*개인학습데이터*.json
+*private*.json
+*textbook*.json
+*교재*.json
+*.bak
+.env
+.env.*
