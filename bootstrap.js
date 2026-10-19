@@ -24,7 +24,7 @@
     status.textContent='파일을 확인하고 있어요…';
     file.text().then(raw=>{
       const value=JSON.parse(raw);
-      if(!valid(value)) throw new Error('1~50강 개인 학습 데이터 파일을 선택해 주세요.');
+      if(!valid(value)) throw new Error('1~100강 개인 학습 데이터 파일을 선택해 주세요.');
       const stripped={format:'seonyu-lessons-v1',lessons:value.lessons.map(d=>{
         const {diaryImage, ...rest}=d;
         return rest;
