@@ -24,3 +24,10 @@
 .project-progress-label strong{font-size:calc(23px * var(--font-scale));color:var(--teal)}
 .project-progress-label span{font-size:calc(12px * var(--font-scale));color:var(--sub)}
 @media(max-width:660px){.top{flex-wrap:wrap;align-items:flex-start}.topright{width:100%;justify-content:space-between}.font-size-switch{order:-1}.font-size-switch button{min-width:30px}.topright .chip{font-size:11px}}
+
+/* Test support: show a fixed clue for each word, with only the first capital letter. */
+.exam-ko-audio{display:block;width:100%;text-align:center;border:2px solid #b8d6cd;border-radius:14px;padding:18px 15px;color:var(--ink);background:#f5fbf6;cursor:pointer;font-size:calc(19px * var(--font-scale));font-weight:800;line-height:1.65}
+.exam-ko-audio:hover,.exam-ko-audio:focus-visible{background:#eaf5ed;border-color:#4b9683}
+.exam-audio-icon{font-size:calc(16px * var(--font-scale));padding-left:8px}
+.exam-word-guide{color:#205853;background:#f8f7ed;border:1px dashed #b7d0bd;padding:16px 10px;border-radius:13px;margin:12px 0;text-align:center;letter-spacing:2px;line-height:2;overflow-wrap:anywhere;word-break:keep-all;font-size:calc(20px * var(--font-scale));font-weight:850}
+#upgrade-lesson-file{display:block;margin-top:10px;max-width:100%}
