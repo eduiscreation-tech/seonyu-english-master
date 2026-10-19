@@ -4,7 +4,7 @@
   const notice=document.getElementById('onboard');
   const status=document.getElementById('onboard-status');
   function valid(v){
-    return !!v && v.format==='seonyu-lessons-v1' && Array.isArray(v.lessons) && v.lessons.length===50 &&
+    return !!v && v.format==='seonyu-lessons-v1' && Array.isArray(v.lessons) && (v.lessons.length===50 || v.lessons.length===100) &&
       v.lessons.every((d,i)=>d.day===i+1 && typeof d.meaning==='string' &&
         Array.isArray(d.phrases) && d.phrases.length>=5 && d.phrases.length<=6 &&
         d.phrases.every(p=>typeof p.en==='string' && typeof p.ko==='string' &&
@@ -34,6 +34,8 @@
       window.location.reload();
     }).catch(e=>{status.textContent='파일 확인 실패: '+e.message;});
   }
+  window.SEONYU_IMPORT_PRIVATE_FILE=importData;
+  window.SEONYU_LESSON_COUNT=valid(loaded)?loaded.lessons.length:0;
   const input=document.getElementById('private-data-file');
   input?.addEventListener('change',ev=>importData(ev.target.files[0]));
   if('serviceWorker' in navigator && location.protocol==='https:'){
