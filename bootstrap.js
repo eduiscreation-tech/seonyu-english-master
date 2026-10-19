@@ -8,7 +8,7 @@
       v.lessons.every((d,i)=>d.day===i+1 && typeof d.meaning==='string' &&
         Array.isArray(d.phrases) && d.phrases.length>=5 && d.phrases.length<=6 &&
         d.phrases.every(p=>typeof p.en==='string' && typeof p.ko==='string' &&
-          /^day\d{2}-(main|ex\d+)$/.test(p.id)));
+          /^day\d{2,3}-(main|ex\d+)$/.test(p.id)));
   }
   let loaded=null;
   try {loaded=JSON.parse(localStorage.getItem(LESSON_KEY)||'null');}catch(e){}
