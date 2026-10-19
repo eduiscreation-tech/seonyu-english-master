@@ -1,0 +1,18 @@
+{
+  "name": "선유 영어 마스터 100",
+  "short_name": "선유 영어",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f9f7f0",
+  "theme_color": "#123f46",
+  "description": "개인 교재 데이터를 기기에 저장하는 무료 영어 학습 앱",
+  "icons": [
+    {
+      "src": "./icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
