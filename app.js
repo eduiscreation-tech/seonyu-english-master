@@ -57,7 +57,12 @@ function separateVerbCards(parts){
       const token=clean(word),prev=i>0?clean(words[i-1]):'';
       const nounLike=determiners.has(prev)&&["work","play","need","watch","call","change","help","look","drink","break","study","drive","turn","talk","plan","book","visit","sleep","run"].includes(token);
       const prepLike=token==="like"&&["feel","feels","felt","look","looks","looked","sound","sounds","seem","seems"].includes(prev);
-      if(verbWords.has(token)&&!nounLike&&!prepLike){flush();result.push(word)}
+      const helperQuestion=i===0&&["do","does","did","can","could","will","would","should","shall"].includes(token)&&["i","you","we","they","he","she","it"].includes(clean(words[i+1]||''));
+      if(verbWords.has(token)&&!nounLike&&!prepLike&&!helperQuestion){
+        const infinitive=buffer.length&&clean(buffer[buffer.length-1])==='to';
+        if(infinitive)buffer.pop();
+        flush();result.push(infinitive?'to '+word:word);
+      }
       else buffer.push(word);
     });
     flush();
