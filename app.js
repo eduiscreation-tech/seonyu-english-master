@@ -43,7 +43,67 @@ function wordsMarkup(s){return h(s).split(/(\s+)/).map((x,i)=>/^\s+$/.test(x)?x:
 function pageListen(){let ps=phrases(u.day),p=ps[u.idx]||ps[0],r=rec(p.id);let total=ps.reduce((n,x)=>n+rec(x.id).stars,0);return `${title('STEP 02 · LISTEN','귀에 익히는 7개의 별 ⭐','영어 또는 한국어 문장을 누르면 영어가 나와요. 끝까지 들으면 별이 하나씩 채워져요.')}<div class="panel">${lessonSelector()}<div class="listen-route">${ps.map((x,i)=>`<button class="${u.idx===i?'active':''}" data-act="listen-select:${i}">${i===0?'대표 문장':'예문 '+i}<span>${rec(x.id).stars} / 7 ★</span></button>`).join('')}</div><p class="small muted">오늘의 듣기 지도 · 원하는 문장으로 바로 이동할 수 있어요.</p><div style="margin:14px 0">${bar(total,ps.length*7)}</div><div class="small muted">듣기 별 ${total} / ${ps.length*7}개</div></div><div class="panel listen-focus"><div class="lesson-top"><b>${u.idx===0?'대표 문장':'MODEL EXAMPLE '+u.idx}</b><span class="pill gold">${r.stars} / 7</span></div>${starMarkup(r.stars)}<button class="touch-speak" data-act="listen-play" ${u.voiceBusy?'disabled':''}><div class="en">${wordsMarkup(p.en)}</div><div class="ko">${h(p.ko)}</div></button><div class="statusline" id="listen-status">${h(u.status||'영어 또는 한국어를 눌러 들어 보세요.')}</div><div class="btnrow">${button('🔊 문장 듣기','listen-play','gold',u.voiceBusy)}${button('■ 재생 멈추기','stop-voice','line',!u.voiceBusy)}${button('다음 문장 →','listen-next','secondary')}</div></div><div class="panel"><div class="formrow"><label>속도 <select id="speech-speed">${[.7,.75,.85,1].map(v=>`<option value="${v}" ${db.prefs.speed===v?'selected':''}>${v}배속</option>`).join('')}</select></label><label>하이라이트 <select id="speech-lead">${[0,120,250,350,500].map(v=>`<option value="${v}" ${db.prefs.lead===v?'selected':''}>${v===0?'보정 없음':(v/1000)+'초 먼저'}</option>`).join('')}</select></label></div><p class="small muted">음성 인식 엔진이 단어 경계를 제공하지 않는 기기에서는 근사 타이밍으로 표시됩니다.</p></div>`}
 // Select a high-frequency central word. The content is user-editable in Settings.
 function gapWord(p){const d=lesson(Number(p.id.slice(3,5)));const stem=d.title.split(' ')[0].toLowerCase();const variants={have:['have','has','had','having'],get:['get','gets','got','getting'],make:['make','makes','made','making'],take:['take','takes','took','taken','taking'],do:['do','does','did','doing'],like:['like','likes','liked'],see:['see','sees','seen','saw'],know:['know','knows','knew'],work:['work','works','worked','working'],go:['go','goes','went','going','gone'],want:['want','wants','wanted'],say:['say','says','said'],let:['let','lets'],give:['give','gives','gave','given'],keep:['keep','keeps','kept']};const words=p.en.split(/\s+/);let idx=words.findIndex(w=>(variants[stem]||[stem]).includes(w.toLowerCase().replace(/^[^a-z]+|[^a-z]+$/g,'')));if(idx<0)idx=Math.min(words.length-1,Math.max(0,Math.floor(words.length/2)));return {words,idx,answer:words[idx].replace(/^[^a-z]+|[^a-z]+$/gi,'')||words[idx]}}
-function chunks(p){const ws=p.en.trim().split(/\s+/);const size=Math.max(2,Math.ceil(ws.length/3));let out=[];for(let i=0;i<ws.length;i+=size)out.push(ws.slice(i,i+size).join(' '));return out}
+// Meaning-first segmentation; no textbook examples live in the public application.
+// Optional human-reviewed chunks are stored only with locally imported learning data.
+function chunks(p){
+  const src=p.en.trim();
+  if(Array.isArray(p.chunks)&&p.chunks.length>1&&p.chunks.every(x=>typeof x==='string')&&p.chunks.join(' ').replace(/\s+/g,' ').trim()===src)return p.chunks;
+  const w=src.split(/\s+/).filter(Boolean),n=w.length;
+  if(n<=3)return [src];
+  const plain=s=>s.toLowerCase().replace(/^[^a-z']+|[^a-z']+$/g,'');
+  const norm=w.map(plain),cuts=new Set([0,n]);
+  const add=i=>{if(i>0&&i<n)cuts.add(i)};
+  const verb=new Set(('am is are was were be been being have has had do does did don\'t doesn\'t didn\'t get gets got make makes made take takes took like likes liked know knows knew see sees saw seen want wants wanted go goes went gone going can could will would should shall must may might need needs needed work works worked working say says said give gives gave given keep keeps kept let lets ask asks asked think thinks thought feel feels felt eat eats ate drink drinks drank help helps helped thank thanks find finds found buy buys bought need needs live lives lived love loves loved use uses used meet meets met play plays played come comes came put puts set sets become becomes became try tries tried call calls called watch watches watched look looks looked spend spends spent enjoy enjoys enjoyed pay pays paid start starts started finish finishes finished leave leaves left invite invites invited like likes liked').split(' '));
+  const links=new Set(['because','but','although','though','unless','while','whether','whereas','since','until','if','when','so']);
+  const prep=new Set(['in','on','at','with','from','for','during','after','before','into','without','over','under','through','around','of','by']);
+  const timeWords=new Set(['today','tomorrow','yesterday','tonight','now']);
+  const mainVerbIndex=norm.findIndex((w,i)=>i>0&&verb.has(w));
+  for(let i=1;i<n;i++){
+    const t=norm[i],prev=norm[i-1],rem=n-i;
+    if(/[,;:]$/.test(w[i-1])&&rem>=2)add(i);
+    if(/[.!?]$/.test(w[i-1])&&rem>=2&&/^[A-Z]/.test(w[i]))add(i);
+    if(links.has(t)&&i>=2&&rem>=2)add(i);
+    if(t==='and'&&rem>=2&&norm.slice(0,i).some(x=>verb.has(x))&&(verb.has(norm[i+1])||['i','you','we','he','she','they','it',"i'll","we'll","you'll"].includes(norm[i+1])))add(i);
+    if(prep.has(t)&&i>=3&&rem>=2&&(i>=4||n>=8)&&(mainVerbIndex<0||i>mainVerbIndex)&&!links.has(norm[i+1])&&!prep.has(norm[i+1])&&!['living','staying','sitting','standing','working','playing','waiting','having','have','has','had'].includes(prev))add(i);
+    if(t==='to'&&i>=3&&rem>=2&&['do','finish','buy','meet','see','make','get','run','take','visit','reply','help','watch','go','join','use','find','eat','have','study','work','spend'].includes(norm[i+1]))add(i);
+    if(timeWords.has(t)&&i>=3&&rem>=2)add(i);
+    if(['meet','give','get','help','take','bring','pick','drop','call','send','proofread','prepare','fix','clean','wait'].includes(t)&&i>=3&&norm.slice(0,i).some(v=>['have','has','had'].includes(v))&&rem>=2&&norm[i-1]!=='to')add(i);
+    if(['this','last','next','every'].includes(t)&&i>=3&&rem>=2&&['week','weekend','month','year','morning','afternoon','evening','night','summer','friday','saturday','sunday'].includes(norm[i+1]))add(i);
+    if(['living','staying','sitting','standing','working','playing','waiting'].includes(t)&&i>=3&&rem>=2&&!['is','are','am','was','were','been','be','a','an','the','some','any','all','my','our','your'].includes(prev)&&!norm.slice(Math.max(0,i-3),i).some(v=>['am','is','are','was','were'].includes(v)))add(i);
+  }
+  for(let start of [...cuts].sort((a,b)=>a-b)){
+    const end=[...cuts].filter(i=>i>start).sort((a,b)=>a-b)[0]||n;
+    if(end-start<4)continue;
+    const subj=norm[start];let found=-1;
+    for(let i=start+1;i<Math.min(start+6,end-1);i++)if(verb.has(norm[i])&&norm[i-1]!=='to'){found=i;break;}
+    if(found>start&&end-found>=2&&(['i','we','you','he','she','they','it','my','our','your','his','her','their','the','a','an','this','that','these','those','there','who','what','where','do','does','did'].includes(subj)||found-start>=2))add(found);
+  }
+  let boundaries=[...cuts].sort((a,b)=>a-b),out=[];
+  for(let k=0;k<boundaries.length-1;k++){
+    let chunk=w.slice(boundaries[k],boundaries[k+1]);
+    while(chunk.length>8){
+      let opts=[];
+      for(let j=3;j<=Math.min(7,chunk.length-2);j++){
+        let t=plain(chunk[j]), before=plain(chunk[j-1]);
+        let score=(prep.has(t)?7:0)+(links.has(t)?7:0)+(t==='to'?5:0)+(['and','or'].includes(t)?5:0)+(['a','an','the','my','your','our','this','that','some','any'].includes(t)?2:0)-Math.abs(j-5);
+        if(verb.has(t)&&['i','you','we','they','he','she','it'].includes(plain(chunk[0])))score+=3;
+        if(before==='to')score-=8;
+        opts.push([score,j]);
+      }
+      opts.sort((a,b)=>b[0]-a[0]);const cut=opts.length?opts[0][1]:5;
+      out.push(chunk.slice(0,cut).join(' '));chunk=chunk.slice(cut);
+    }
+    if(chunk.length)out.push(chunk.join(' '));
+  }
+  for(let i=0;i<out.length;i++){
+    const one=out[i].split(/\s+/);
+    if(one.length===1&&['a','an','the','and','or','to','in','on','at','for','of','with','from','but','so','if','when'].includes(plain(one[0]))){
+      if(i+1<out.length){out[i+1]=out[i]+' '+out[i+1];out.splice(i,1);i--;}
+      else if(i>0){out[i-1]+=' '+out[i];out.splice(i,1);i--;}
+    }
+  }
+  return out.length>1?out:[src];
+}
 function setupStage(stage){u.stage=stage;u.chosen=[];u.wordChosen=[];u.clozeShown=false;u.busy=false;u.status='';const p=phrases(u.day)[u.idx];if(p){u.chunkChoices=shuffle(chunks(p).map((_,i)=>i));u.wordChoices=shuffle(p.en.trim().split(/\s+/).map((_,i)=>i));u.gapIndex=gapWord(p).idx}}
 function pageTrain(){const ps=phrases(u.day),p=ps[u.idx]||ps[0],r=rec(p.id);const names=['1. 의미 덩어리 조립','2. 핵심 빈칸','3. 낱단어 영어 완성'];let center='';if(u.stage===0){const a=chunks(p);center=`<button class="korean-prompt" style="width:100%;border:0;cursor:pointer;color:var(--ink)" data-act="train-play" aria-label="한국어 문장을 눌러 영어 듣기">${h(p.ko)} <span style="font-size:12px;color:#688b7e">🔊</span></button><p class="muted small">듣기 후 의미 덩어리를 순서대로 골라요. 음성이 끝나기 전에는 다음 카드를 누를 수 없어요.</p><div class="chosen-area" id="selected-words">${u.chosen.length?u.chosen.map(i=>`<span class="token chosen">${h(a[i])}</span>`).join(''):'<span class="placeholder">아래 단어 덩어리를 차례로 선택해요</span>'}</div><div class="option-bank">${u.chunkChoices.map(i=>`<button class="token" data-act="chunk:${i}" ${u.chosen.includes(i)||u.busy?'disabled':''}>${h(a[i])}</button>`).join('')}</div><div class="statusline">${h(u.status||`${r.chunk} / ${db.prefs.puzzleRepeats}회 완성`)} · 끝까지 들은 뒤 진행합니다</div>`}
 else if(u.stage===1){const g=gapWord(p);const display=g.words.map((w,i)=>i===g.idx?(u.clozeShown?h(w):'<span style="background:#fff0c9;padding:4px 12px;border-radius:9px">?</span>'):h(w)).join(' ');center=`<button class="korean-prompt" style="width:100%;border:0;cursor:pointer;color:var(--ink)" data-act="train-play">${h(p.ko)} <span style="font-size:12px;color:#688b7e">🔊</span></button><div class="panel" style="margin-top:15px"><div class="big-english" id="cloze-text">${display}</div></div><p class="muted">비어 있는 핵심 단어를 찾아보세요. 정답이면 완성된 문장을 잠깐 보여준 후 자동으로 넘어가요.</p><div class="formrow"><input class="answer-input" id="cloze-input" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="?에 들어갈 영어" value="" ${u.busy?'disabled':''}>${button('빈칸 확인','cloze-check','gold',u.busy)}</div>`}
