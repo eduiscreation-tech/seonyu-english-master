@@ -67,7 +67,12 @@ function separateVerbCards(parts){
     });
     flush();
     return result;
-  });
+  }).reduce((acc,part)=>{
+    // Keep conjunctions attached to a following verb rather than leaving lone cards.
+    if(acc.length&&['and','or','but'].includes(acc[acc.length-1].toLowerCase())&&part){acc[acc.length-1]+=' '+part;}
+    else acc.push(part);
+    return acc;
+  },[]);
 }
 // Meaning-first segmentation; no textbook examples live in the public application.
 // Optional human-reviewed chunks are stored only with locally imported learning data.
