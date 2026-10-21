@@ -31,3 +31,9 @@
 .exam-audio-icon{font-size:calc(16px * var(--font-scale));padding-left:8px}
 .exam-word-guide{color:#205853;background:#f8f7ed;border:1px dashed #b7d0bd;padding:16px 10px;border-radius:13px;margin:12px 0;text-align:center;letter-spacing:2px;line-height:2;overflow-wrap:anywhere;word-break:keep-all;font-size:calc(20px * var(--font-scale));font-weight:850}
 #upgrade-lesson-file{display:block;margin-top:10px;max-width:100%}
+
+/* Accurate meaning-question target: auxiliary + main verb together. */
+.exam-target-verb{text-decoration:underline;text-decoration-thickness:3px;text-underline-offset:6px;text-decoration-color:#c08b22;background:linear-gradient(transparent 72%,#fff0bb 72%);font-weight:900}
+.review-card .touch-speak:disabled{opacity:1!important;filter:none}
+.review-card .option-bank{margin-top:15px}
+.review-card .stack .btn{text-align:left;white-space:normal;line-height:1.55}
