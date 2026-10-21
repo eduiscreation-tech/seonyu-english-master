@@ -188,7 +188,33 @@ function reviewMeaningPick(index){
  else{u.reviewWrong=true;u.reviewShow=true;draw();}
 }
 
-function pageReview(){const ids=u.reviewIds;if(!ids.length)return `${title('SPACED REVIEW','오늘의 기억 복습','망각곡선을 고려해 다시 만날 문장만 보여 줍니다.')}<div class="panel empty"><h2>🌷 복습할 문장이 없어요!</h2><p>새로운 문장을 학습하면 다음 날부터 복습이 예약됩니다.</p>${button('챕터 선택하기','nav:chapters')}</div>`;const p=phrase(ids[Math.min(ids.length-1,u.reviewIndex)]),r=rec(p.id);return `${title('SPACED REVIEW',`기억 복습 ${u.reviewIndex+1} / ${ids.length}`,'먼저 한국어만 보고 영어로 떠올려 보세요.')}<div class="panel"><div class="review-card"><span class="pill">${p.id.replace('day','DAY ').replace('-main',' · 대표').replace('-ex',' · 예문 ')}</span><div class="big-korean">${h(p.ko)}</div>${u.reviewShow?`<div class="exam-answer">${h(p.en)}</div>`:''}</div><div class="btnrow" style="justify-content:center">${!u.reviewShow?button('영어 문장 확인','review-show','gold'):button('🔊 정답 듣기','review-speak','secondary')}</div>${u.reviewShow?`<p class="small muted">얼마나 잘 기억했나요? 점수는 실제 기억 정도를 기준으로 선택해 주세요.</p><div class="review-actions"><button data-act="review-grade:again">다시</button><button data-act="review-grade:hard">어려움</button><button data-act="review-grade:good">기억</button><button data-act="review-grade:easy">쉬움</button></div>`:''}</div>`}
+function pageReview(){
+ const ids=u.reviewIds||[];
+ if(u.reviewIndex>=ids.length)return `${title('SPACED REVIEW','오늘의 기억 복습','학습한 문장을 복습합니다.')}<div class="panel empty"><h2>🌷 오늘의 복습을 마쳤어요!</h2><p>새로운 문장은 암기 완료 후 24시간 뒤부터 복습할 수 있어요.</p>${button('오늘 화면으로','nav:home','secondary')}</div>`;
+ const p=phrase(ids[u.reviewIndex]);
+ if(!p)return `${title('SPACED REVIEW','복습 자료가 없어요','설정에서 개인 교재 데이터를 확인해 주세요.')}${button('돌아가기','nav:home')}`;
+ const isRecall=reviewIsRecall(p);
+ const label=p.id.replace('day','DAY ').replace('-main',' · 대표').replace('-ex',' · 예문 ');
+ let center='';
+ if(isRecall){
+  const w=p.en.trim().split(/\s+/);
+  center=`<div class="review-card"><span class="pill">${h(label)} · 낱단어 암송</span><div class="big-korean">${h(p.ko)}</div><p class="small muted">한국어만 보고 낱단어를 순서대로 골라 문장을 만드세요.</p>
+  <div class="chosen-area">${u.reviewWords.length?u.reviewWords.map(i=>`<span class="token chosen">${h(w[i])}</span>`).join(''):'<span class="placeholder">아래 낱단어를 골라 문장을 완성해요</span>'}</div>
+  <div class="option-bank">${u.reviewOrder.map(i=>`<button class="token" data-act="review-word:${i}" ${u.reviewWords.includes(i)||u.reviewBusy?'disabled':''}>${h(w[i])}</button>`).join('')}</div>
+  <p class="small muted">${u.reviewWords.length} / ${w.length} 단어</p>
+  <div class="statusline" id="review-status" role="status">${u.reviewWrong?'틀린 단어가 있었어요. 완성 후 오늘 한 번 더 나옵니다.':h(u.status||'차근차근 순서대로 골라 보세요. 🌱')}</div>
+  ${u.reviewBusy&&u.reviewWrong?`<div class="help">정답: <strong>${h(p.en)}</strong><p>이 문장은 오늘 다시 복습합니다.</p></div>${button('다음 문장 →','review-retry-next','gold')}`:''}</div>`;
+ }else{
+  const right=u.reviewOptions.find(x=>x.id===p.id);
+  center=`<div class="review-card"><span class="pill">${h(label)} · 듣기·뜻 이해</span>
+   <p class="small muted">영어를 듣고 뜻을 골라요. 아래 선택지는 등록된 교재 한국어 번역입니다.</p>
+   <button class="touch-speak" data-act="review-speak" style="width:100%" aria-label="영어 문장 듣기"><div class="en">${h(p.en)}</div><span class="small muted">🔊 문장 듣기</span></button>
+   <p class="small muted" style="margin:16px 0 8px">이 영어 문장의 뜻으로 알맞은 것은?</p>
+   <div class="stack">${u.reviewOptions.map((opt,i)=>`<button class="btn ${u.reviewChoice!==null?(opt.id===p.id?'secondary':'line'):'line'}" style="text-align:left" data-act="review-meaning:${i}" ${u.reviewChoice!==null?'disabled':''}>${h(opt.ko)} ${u.reviewChoice!==null&&opt.id===p.id?'✓':''}</button>`).join('')}</div>
+   ${u.reviewChoice!==null?`<div class="help">정답: <strong>${h(right?.ko||p.ko)}</strong><p>이 문장은 오늘 한 번 더 복습합니다.</p></div>${button('다음 문장 →','review-retry-next','gold')}`:''}</div>`;
+ }
+ return `${title('SPACED REVIEW','기억 복습 '+(u.reviewIndex+1)+' / '+ids.length,'대표·예문 1은 낱단어 암송, 예문 2~5는 영어 듣기와 뜻 이해.') }<div class="panel">${center}<div class="btnrow">${button('나중에 이어서 복습','nav:home','line')}</div></div>`;
+}
 function assessmentsList(){
  const arr=Array.from({length:Math.floor(DATA.length/10)},(_,i)=>(i+1)*10).map(n=>({key:'form'+n,name:`${n}강 형성평가`,range:[n-9,n],speech:12,concept:3}));
  if(DATA.length>=50)arr.push({key:'mid50',name:'50강 중간평가',range:[1,50],speech:30,concept:10});
